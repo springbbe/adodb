@@ -97,6 +97,18 @@ if( !defined( '_ADODB_LAYER' ) ) {
 }
 
 /**
+* Route the XML parser's element and character data callbacks to an object.
+*
+* @param resource|XMLParser $parser XML parser
+* @param object $obj Object implementing _tag_open(), _tag_close() and _tag_cdata()
+* @access private
+*/
+function adodb_xmlschema_set_handlers( $parser, $obj ) {
+	xml_set_element_handler( $parser, array( $obj, '_tag_open' ), array( $obj, '_tag_close' ) );
+	xml_set_character_data_handler( $parser, array( $obj, '_tag_cdata' ) );
+}
+
+/**
 * Abstract DB Object. This class provides basic methods for database objects, such
 * as tables and indexes.
 *
@@ -127,7 +139,7 @@ class dbObject {
 	*
 	* @access private
 	*/
-	function _tag_open( &$parser, $tag, $attributes ) {
+	function _tag_open( $parser,$tag, $attributes ) {
 
 	}
 
@@ -136,7 +148,7 @@ class dbObject {
 	*
 	* @access private
 	*/
-	function _tag_cdata( &$parser, $cdata ) {
+	function _tag_cdata( $parser,$cdata ) {
 
 	}
 
@@ -145,7 +157,7 @@ class dbObject {
 	*
 	* @access private
 	*/
-	function _tag_close( &$parser, $tag ) {
+	function _tag_close( $parser,$tag ) {
 
 	}
 
@@ -258,20 +270,20 @@ class dbTable extends dbObject {
 	*
 	* @access private
 	*/
-	function _tag_open( &$parser, $tag, $attributes ) {
+	function _tag_open( $parser,$tag, $attributes ) {
 		$this->currentElement = strtoupper( $tag );
 
 		switch( $this->currentElement ) {
 			case 'INDEX':
 				if( !isset( $attributes['PLATFORM'] ) OR $this->supportedPlatform( $attributes['PLATFORM'] ) ) {
 					$index = $this->addIndex( $attributes );
-					xml_set_object( $parser,  $index );
+					adodb_xmlschema_set_handlers( $parser,  $index );
 				}
 				break;
 			case 'DATA':
 				if( !isset( $attributes['PLATFORM'] ) OR $this->supportedPlatform( $attributes['PLATFORM'] ) ) {
 					$data = $this->addData( $attributes );
-					xml_set_object( $parser, $data );
+					adodb_xmlschema_set_handlers( $parser, $data );
 				}
 				break;
 			case 'DROP':
@@ -317,7 +329,7 @@ class dbTable extends dbObject {
 	*
 	* @access private
 	*/
-	function _tag_cdata( &$parser, $cdata ) {
+	function _tag_cdata( $parser,$cdata ) {
 		switch( $this->currentElement ) {
 			// Table constraint
 			case 'CONSTRAINT':
@@ -341,13 +353,13 @@ class dbTable extends dbObject {
 	*
 	* @access private
 	*/
-	function _tag_close( &$parser, $tag ) {
+	function _tag_close( $parser,$tag ) {
 		$this->currentElement = '';
 
 		switch( strtoupper( $tag ) ) {
 			case 'TABLE':
 				$this->parent->addSQL( $this->create( $this->parent ) );
-				xml_set_object( $parser, $this->parent );
+				adodb_xmlschema_set_handlers( $parser, $this->parent );
 				$this->destroy();
 				break;
 			case 'FIELD':
@@ -657,7 +669,7 @@ class dbIndex extends dbObject {
 	*
 	* @access private
 	*/
-	function _tag_open( &$parser, $tag, $attributes ) {
+	function _tag_open( $parser,$tag, $attributes ) {
 		$this->currentElement = strtoupper( $tag );
 
 		switch( $this->currentElement ) {
@@ -684,7 +696,7 @@ class dbIndex extends dbObject {
 	*
 	* @access private
 	*/
-	function _tag_cdata( &$parser, $cdata ) {
+	function _tag_cdata( $parser,$cdata ) {
 		switch( $this->currentElement ) {
 			// Index field name
 			case 'COL':
@@ -700,12 +712,12 @@ class dbIndex extends dbObject {
 	*
 	* @access private
 	*/
-	function _tag_close( &$parser, $tag ) {
+	function _tag_close( $parser,$tag ) {
 		$this->currentElement = '';
 
 		switch( strtoupper( $tag ) ) {
 			case 'INDEX':
-				xml_set_object( $parser, $this->parent );
+				adodb_xmlschema_set_handlers( $parser, $this->parent );
 				break;
 		}
 	}
@@ -799,7 +811,7 @@ class dbData extends dbObject {
 	*
 	* @access private
 	*/
-	function _tag_open( &$parser, $tag, $attributes ) {
+	function _tag_open( $parser,$tag, $attributes ) {
 		$this->currentElement = strtoupper( $tag );
 
 		switch( $this->currentElement ) {
@@ -821,7 +833,7 @@ class dbData extends dbObject {
 	*
 	* @access private
 	*/
-	function _tag_cdata( &$parser, $cdata ) {
+	function _tag_cdata( $parser,$cdata ) {
 		switch( $this->currentElement ) {
 			// Index field name
 			case 'F':
@@ -837,12 +849,12 @@ class dbData extends dbObject {
 	*
 	* @access private
 	*/
-	function _tag_close( &$parser, $tag ) {
+	function _tag_close( $parser,$tag ) {
 		$this->currentElement = '';
 
 		switch( strtoupper( $tag ) ) {
 			case 'DATA':
-				xml_set_object( $parser, $this->parent );
+				adodb_xmlschema_set_handlers( $parser, $this->parent );
 				break;
 		}
 	}
@@ -1016,7 +1028,7 @@ class dbQuerySet extends dbObject {
 	*
 	* @access private
 	*/
-	function _tag_open( &$parser, $tag, $attributes ) {
+	function _tag_open( $parser,$tag, $attributes ) {
 		$this->currentElement = strtoupper( $tag );
 
 		switch( $this->currentElement ) {
@@ -1038,7 +1050,7 @@ class dbQuerySet extends dbObject {
 	/**
 	* XML Callback to process CDATA elements
 	*/
-	function _tag_cdata( &$parser, $cdata ) {
+	function _tag_cdata( $parser,$cdata ) {
 		switch( $this->currentElement ) {
 			// Line of queryset SQL data
 			case 'QUERY':
@@ -1054,7 +1066,7 @@ class dbQuerySet extends dbObject {
 	*
 	* @access private
 	*/
-	function _tag_close( &$parser, $tag ) {
+	function _tag_close( $parser,$tag ) {
 		$this->currentElement = '';
 
 		switch( strtoupper( $tag ) ) {
@@ -1064,7 +1076,7 @@ class dbQuerySet extends dbObject {
 				break;
 			case 'SQL':
 				$this->parent->addSQL( $this->create( $this->parent ) );
-				xml_set_object( $parser, $this->parent );
+				adodb_xmlschema_set_handlers( $parser, $this->parent );
 				$this->destroy();
 				break;
 			default:
@@ -1241,6 +1253,12 @@ class adoSchema {
 	* @access private
 	*/
 	var $currentElement = '';
+
+	/**
+	* @var object Table or query set object currently receiving XML callbacks
+	* @access private
+	*/
+	var $obj;
 
 	/**
 	* @var string If set (to 'ALTER' or 'REPLACE'), upgrade an existing database
@@ -1458,8 +1476,6 @@ class adoSchema {
 			}
 		}
 
-		xml_parser_free( $xmlParser );
-
 		return $this->sqlArray;
 	}
 
@@ -1500,8 +1516,6 @@ class adoSchema {
 				xml_get_current_line_number( $xmlParser)
 			) );
 		}
-
-		xml_parser_free( $xmlParser );
 
 		return $this->sqlArray;
 	}
@@ -1623,11 +1637,9 @@ class adoSchema {
 	function create_parser() {
 		// Create the parser
 		$xmlParser = xml_parser_create();
-		xml_set_object( $xmlParser, $this );
 
 		// Initialize the XML callback functions
-		xml_set_element_handler( $xmlParser, '_tag_open', '_tag_close' );
-		xml_set_character_data_handler( $xmlParser, '_tag_cdata' );
+		adodb_xmlschema_set_handlers( $xmlParser, $this );
 
 		return $xmlParser;
 	}
@@ -1637,16 +1649,16 @@ class adoSchema {
 	*
 	* @access private
 	*/
-	function _tag_open( &$parser, $tag, $attributes ) {
+	function _tag_open( $parser,$tag, $attributes ) {
 		switch( strtoupper( $tag ) ) {
 			case 'TABLE':
 				$this->obj = new dbTable( $this, $attributes );
-				xml_set_object( $parser, $this->obj );
+				adodb_xmlschema_set_handlers( $parser, $this->obj );
 				break;
 			case 'SQL':
 				if( !isset( $attributes['PLATFORM'] ) OR $this->supportedPlatform( $attributes['PLATFORM'] ) ) {
 					$this->obj = new dbQuerySet( $this, $attributes );
-					xml_set_object( $parser, $this->obj );
+					adodb_xmlschema_set_handlers( $parser, $this->obj );
 				}
 				break;
 			default:
@@ -1660,7 +1672,7 @@ class adoSchema {
 	*
 	* @access private
 	*/
-	function _tag_cdata( &$parser, $cdata ) {
+	function _tag_cdata( $parser,$cdata ) {
 	}
 
 	/**
@@ -1669,7 +1681,7 @@ class adoSchema {
 	* @access private
 	* @internal
 	*/
-	function _tag_close( &$parser, $tag ) {
+	function _tag_close( $parser,$tag ) {
 
 	}
 

@@ -422,6 +422,8 @@ if (!defined('_ADODB_LAYER')) {
 	var $dataProvider = 'native';
 	var $databaseType = '';		/// RDBMS currently in use, eg. odbc, mysql, mssql
 	var $database = '';			/// Name of database to be used.
+	var $databaseName = '';		/// Same as $database; kept for older callers
+	var $_maxRecordCount = 0;	/// Total row count of the last paged query
 	var $host = '';				/// The hostname of the database server
 	var $port = '';				/// The port of the database server
 	var $user = '';				/// The username which is used to connect to the database server.
@@ -3345,6 +3347,7 @@ http://www.stanford.edu/dept/itss/docs/oracle/10g/server.101/b10759/statements_1
 	var $_atLastPage = false;	/** Added by Iván Oliva to implement recordset pagination */
 	var $_lastPageNo = -1;
 	var $_maxRecordCount = 0;
+	var $rowsPerPage;	/// page size of a recordset returned by PageExecute()
 	var $datetime = false;
 
 	/**
