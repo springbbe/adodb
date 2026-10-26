@@ -694,12 +694,6 @@ Committed_AS:   348732 kB
 	}
 	$this->conn->LogSQL($savelog);
 
-	// magic quotes
-
-	if (isset($_GET['sql']) && get_magic_quotes_gpc()) {
-		$_GET['sql'] = $_GET['sql'] = str_replace(array("\\'",'\"'),array("'",'"'),$_GET['sql']);
-	}
-
 	if (!isset($_SESSION['ADODB_PERF_SQL'])) $nsql = $_SESSION['ADODB_PERF_SQL'] = 10;
 	else  $nsql = $_SESSION['ADODB_PERF_SQL'];
 
@@ -1000,14 +994,11 @@ Committed_AS:   348732 kB
 		return $arr;
 	}
 
+	/**
+	 * Returns the request value unchanged; magic quotes no longer exist.
+	 */
 	function undomq($m)
 	{
-	if (get_magic_quotes_gpc()) {
-		// undo the damage
-		$m = str_replace('\\\\','\\',$m);
-		$m = str_replace('\"','"',$m);
-		$m = str_replace('\\\'','\'',$m);
-	}
 	return $m;
 }
 

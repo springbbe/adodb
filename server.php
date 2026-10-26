@@ -51,16 +51,9 @@ function err($s)
 	die('**** '.$s.' ');
 }
 
-// undo stupid magic quotes
+// Returns the request value unchanged; magic quotes no longer exist.
 function undomq(&$m)
 {
-	if (get_magic_quotes_gpc()) {
-		// undo the damage
-		$m = str_replace('\\\\','\\',$m);
-		$m = str_replace('\"','"',$m);
-		$m = str_replace('\\\'','\'',$m);
-
-	}
 	return $m;
 }
 
